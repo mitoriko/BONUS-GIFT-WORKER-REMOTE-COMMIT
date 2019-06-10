@@ -78,7 +78,7 @@ namespace QuartzRedis.Common
                 {
                     Environment.SetEnvironmentVariable(item.key, item.value);
                 }
-
+                DBHelp.ReloadConnectionString();
                 Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm") + "> " + "加载配置信息完成");
                 if (isFirst)
                 {

@@ -9,10 +9,15 @@ namespace QuartzRedis.Common
 {
     public abstract class DBHelp
     {
-        public static string connectionString = "Data Source="+Global.DataSource+ ";Initial Catalog=" + Global.InitialCatalog + ";" +
-                                                "User ID=" + Global.UserID + ";Pwd=" + Global.Pwd + "";
+        public static string connectionString;
         public DBHelp()
         {
+        }
+
+        public static void ReloadConnectionString()
+        {
+            connectionString = "Data Source=" + Global.DataSource + ";Initial Catalog=" + Global.InitialCatalog + ";" +
+                                                "User ID=" + Global.UserID + ";Pwd=" + Global.Pwd + "";
         }
 
         #region 公用方法
