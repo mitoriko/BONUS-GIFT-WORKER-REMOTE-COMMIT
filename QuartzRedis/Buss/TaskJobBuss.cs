@@ -14,7 +14,7 @@ namespace QuartzRedis.Buss
 {
     public class TaskJobBuss
     {
-        public void doWork(string ids)
+        public void doWork()
         {
             //System.Threading.Thread.Sleep(1000);
             //Console.WriteLine(ids);
