@@ -9,9 +9,11 @@ namespace QuartzRedis.Dao
 {
     class SqlDao
     {
-        public List<AddMemberInfoParam> getAddMemberInfoParam()
+        public UpdateUserInfoParam getAddMemberInfoParam()
         {
+            UpdateUserInfoParam updateUserInfoParam = new UpdateUserInfoParam();
             List<AddMemberInfoParam> list = new List<AddMemberInfoParam>();
+            Dictionary<string, List<string>> dictionary = new Dictionary<string, List<string>>();
             StringBuilder builder = new StringBuilder();
             builder.AppendFormat(ShipSqls.SELECT_GMEMBER);
             string sql = builder.ToString();
@@ -27,14 +29,19 @@ namespace QuartzRedis.Dao
                         cardCode = dr["ME_ID"].ToString(),
                     };
                     list.Add(param);
+                    List<string> list1 = postSuccessSql(param);
+                    dictionary.Add(dr["ME_MobileNum"].ToString(), list1);
                 }
             }
-            return list;
+            updateUserInfoParam.AddMemberInfoParamList = list;
+            updateUserInfoParam.Dictionary = dictionary;
+            return updateUserInfoParam;
         }
-        public void postSuccessSql(ref List<string> list, AddMemberInfoParam param)
+        public List<string> postSuccessSql(AddMemberInfoParam param)
         {
+            List<string> list = new List<string>();
             StringBuilder builder = new StringBuilder();
-            builder.AppendFormat(ShipSqls.INSERT_GMEMBERLOG, param.cardCode, param.phone,"1", param.point);
+            builder.AppendFormat(ShipSqls.INSERT_GMEMBERLOG, param.cardCode, param.phone, "1", param.point);
             list.Add(builder.ToString());
             builder = new StringBuilder();
             builder.AppendFormat(ShipSqls.SELECT_GRECHARGEDETAIL_BY_ME_MOBILENUM, param.phone);
@@ -62,6 +69,20 @@ namespace QuartzRedis.Dao
                     list.Add(builder1.ToString());
                 }
             }
+            builder = new StringBuilder();
+            builder.AppendFormat(ShipSqls.SELECT_GCHANGESCOREDETAIL_BY_ME_MOBILENUM, param.phone);
+            string sql2 = builder.ToString();
+            DataTable dt2 = DBHelp.Query(sql2).Tables[0];
+            if (dt2 != null)
+            {
+                foreach (DataRow dr in dt2.Rows)
+                {
+                    StringBuilder builder1 = new StringBuilder();
+                    builder1.AppendFormat(ShipSqls.INSERT_GCHANGESCOREDETAILLOG, dr["CH_GUID"].ToString(), "1", "同步会员");
+                    list.Add(builder1.ToString());
+                }
+            }
+            return list;
         }
         public string postFailSql(AddMemberInfoParam param,string msg)
         {
@@ -112,6 +133,29 @@ namespace QuartzRedis.Dao
                         ME_MobileNum = dr["ME_MOBILENUM"].ToString(),
                         RD_GiveScore = dr["RD_GIVESCORE"].ToString(),
                         RD_Type = dr["RD_TYPE"].ToString(),
+                    };
+                    list.Add(param);
+                }
+            }
+            return list;
+        }
+
+        public List<GChangeScoreDetailChangeParam> GChangeScoreDetailChange()
+        {
+            List<GChangeScoreDetailChangeParam> list = new List<GChangeScoreDetailChangeParam>();
+            StringBuilder builder = new StringBuilder();
+            builder.AppendFormat(ShipSqls.SELECT_GCHANGESCOREDETAIL_CHANGE);
+            string sql = builder.ToString();
+            DataTable dt = DBHelp.Query(sql).Tables[0];
+            if (dt != null)
+            {
+                foreach (DataRow dr in dt.Rows)
+                {
+                    GChangeScoreDetailChangeParam param = new GChangeScoreDetailChangeParam
+                    {
+                        CH_GUID = dr["CH_GUID"].ToString(),
+                        ME_MobileNum = dr["ME_MOBILENUM"].ToString(),
+                        CH_Money = dr["CH_MONEY"].ToString(),
                     };
                     list.Add(param);
                 }
@@ -210,19 +254,31 @@ namespace QuartzRedis.Dao
             public const string INSERT_GGIFTSELLMASTERLOG = "" +
                                       "INSERT INTO GGIFTSELLMASTERLOG(GT_GUID,IFGIFT,GIFT_REMARK,POINTCOMMITID) " +
                                       "VALUES('{0}','{1}','{2}','{3}')";
+            public const string SELECT_GCHANGESCOREDETAIL_BY_ME_MOBILENUM = "" +
+                                      "SELECT CH_GUID FROM GCHANGESCOREDETAIL " +
+                                      "WHERE CH_ME_ID IN (SELECT ME_ID FROM GMEMBER WHERE ME_MOBILENUM = '{0}')";
+            public const string INSERT_GCHANGESCOREDETAILLOG = "" +
+                                      "INSERT INTO GCHANGESCOREDETAILLOG(CH_GUID,IFGIFT,GIFT_REMARK) " +
+                                      "VALUES('{0}','{1}','{2}')";
 
             public const string SELECT_GGIFTSELLMASTER_CHANGE = "" +
                                       "SELECT GS.GT_GUID,GM.ME_MOBILENUM,GS.GTM_SCORE,GS.GT_TYPE " +
-                                      "FROM GGIFTSELLMASTER GS,GMEMBERLOG GM " +
-                                      "WHERE GS.GTM_TIME > CONVERT(DATETIME,'06/09/2019',101) AND GS.GTM_ME_ID = GM.ME_ID  " +
+                                      "FROM GGIFTSELLMASTER GS,GMEMBERLOG GM,GMEMBER M " +
+                                      "WHERE GS.GTM_TIME > CONVERT(DATETIME,'06/09/2019',101) AND GS.GTM_ME_ID = M.ME_ID AND M.ME_MOBILENUM=GM.ME_MOBILENUM  " +
                                       "AND GS.GT_GUID NOT IN (SELECT GT_GUID FROM GGIFTSELLMASTERLOG) AND GS.GTM_SCORE >0 " +
                                       "ORDER BY GS.GTM_TIME ASC";
             public const string SELECT_GRECHARGEDETAIL_CHANGE = "" +
                                       "SELECT  GR.RD_GUID,GM.ME_MOBILENUM,GR.RD_GIVESCORE,GR.RD_TYPE " +
-                                      "FROM GRECHARGEDETAIL GR,GMEMBERLOG GM " +
-                                      "WHERE GR.RD_TIME > CONVERT(DATETIME,'06/09/2019',101) AND GR.RD_ME_ID = GM.ME_ID " +
+                                      "FROM GRECHARGEDETAIL GR,GMEMBERLOG GM,GMEMBER M " +
+                                      "WHERE GR.RD_TIME > CONVERT(DATETIME,'06/09/2019',101) AND GR.RD_ME_ID = M.ME_ID AND M.ME_MOBILENUM=GM.ME_MOBILENUM " +
                                       "AND GR.RD_GUID NOT IN (SELECT RD_GUID FROM GRECHARGEDETAILLOG) AND GR.RD_GIVESCORE > 0 " +
                                       "ORDER BY GR.RD_TIME ASC";
+            public const string SELECT_GCHANGESCOREDETAIL_CHANGE = "" +
+                                      "SELECT  CH.CH_GUID,GM.ME_MOBILENUM,CH.CH_MONEY " +
+                                      "FROM GCHANGESCOREDETAIL CH,GMEMBERLOG GM, GMEMBER M " +
+                                      "WHERE CH.CH_TIME > CONVERT(DATETIME,'06/09/2019',101) AND CH.CH_ME_ID = M.ME_ID AND M.ME_MOBILENUM= GM.ME_MOBILENUM " +
+                                      "AND CH.CH_GUID NOT IN (SELECT CH_GUID FROM GCHANGESCOREDETAILLOG) AND CH.CH_MONEY > 0 " +
+                                      "ORDER BY CH.CH_TIME ASC";
 
             public const string SELECT_GMEMBER_BY_ME_MOBILENUM = "" +
                                       "SELECT GM.ME_ID,GM.ME_NAME,GM.ME_POINT,GM.ME_SCORE,GM.ME_COIN,GM.ME_TICKET,GM.ME_SHOPNO, " +

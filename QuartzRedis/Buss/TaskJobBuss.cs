@@ -18,17 +18,21 @@ namespace QuartzRedis.Buss
         {
             //System.Threading.Thread.Sleep(1000);
             //Console.WriteLine(ids);
+            updateUserInfo();
+            updateCommit();
+            getCommit();
         }
 
         /// <summary>
-        /// 上传用户信息-罗斯福店
+        /// 上传用户信息 
         /// </summary>
         private void updateUserInfo()
         {
             try
             {
                 SqlDao sqlDao = new SqlDao();
-                List<AddMemberInfoParam> paramList = sqlDao.getAddMemberInfoParam();
+                UpdateUserInfoParam updateUserInfoParam = sqlDao.getAddMemberInfoParam();
+                List<AddMemberInfoParam> paramList = updateUserInfoParam.AddMemberInfoParamList;
                 if (paramList.Count == 0)
                 {
                     return;
@@ -41,7 +45,11 @@ namespace QuartzRedis.Buss
                     ReturnItem ri = JsonConvert.DeserializeObject<ReturnItem>(result);
                     if (ri.success)
                     {
-                        sqlDao.postSuccessSql(ref list, param);
+                        List<string> list1 = updateUserInfoParam.Dictionary[param.phone];
+                        foreach (var sql in list1)
+                        {
+                            list.Add(sql);
+                        }
                     }
                     else
                     {
@@ -75,7 +83,7 @@ namespace QuartzRedis.Buss
                     }
                     catch (Exception)
                     {
-
+                        Console.WriteLine(gParam.GTM_Score);
                     }
                     //GT_Type为6是增加积分，为3是减少积分
                     if (gParam.GT_Type == "3")
@@ -115,7 +123,7 @@ namespace QuartzRedis.Buss
                     }
                     catch (Exception)
                     {
-
+                        Console.WriteLine(rParam.RD_GiveScore);
                     }
                     //GT_Type为21和0是增加积分，为1和20是减少积分
                     if (rParam.RD_Type == "1" || rParam.RD_Type == "20")
@@ -143,6 +151,41 @@ namespace QuartzRedis.Buss
                         list.Add(builder1.ToString());
                     }
                 }
+                //处理积分兑换币
+                List<GChangeScoreDetailChangeParam> cList = sqlDao.GChangeScoreDetailChange();
+                foreach (GChangeScoreDetailChangeParam cParam in cList)
+                {
+                    int point = 0;
+                    try
+                    {
+                        point = 0 - Convert.ToInt32(cParam.CH_Money);
+                    }
+                    catch (Exception)
+                    {
+                        Console.WriteLine(cParam.CH_Money);
+                    }
+                    AddPointRecordParam param = new AddPointRecordParam
+                    {
+                        phone = cParam.ME_MobileNum,
+                        point = point.ToString(),
+                    };
+                    string st = getRemoteParam(param, "AddPointRecord", "3");
+                    string result = HttpHandle.PostHttps(Global.PostUrl, st, "application/json");
+                    ReturnItem ri = JsonConvert.DeserializeObject<ReturnItem>(result);
+                    if (ri.success)
+                    {
+                        StringBuilder builder1 = new StringBuilder();
+                        builder1.AppendFormat(ShipSqls.INSERT_GCHANGESCOREDETAILLOG, cParam.CH_GUID, "1", point);
+                        list.Add(builder1.ToString());
+                    }
+                    else
+                    {
+                        StringBuilder builder1 = new StringBuilder();
+                        builder1.AppendFormat(ShipSqls.INSERT_GCHANGESCOREDETAILLOG, cParam.CH_GUID, "0", point);
+                        list.Add(builder1.ToString());
+                    }
+                }
+
                 DBHelp.ExecuteSqlTran(list);
             }
             catch (Exception ex)

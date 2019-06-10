@@ -55,6 +55,12 @@ namespace QuartzRedis.Buss
         public string RD_GiveScore;
         public string RD_Type;
     }
+    public class GChangeScoreDetailChangeParam
+    {
+        public string CH_GUID;
+        public string ME_MobileNum;
+        public string CH_Money;
+    }
     public class GMemberParam
     {
         public string ME_ID;
@@ -78,6 +84,11 @@ namespace QuartzRedis.Buss
     }
     public class Param { }
 
+    public class UpdateUserInfoParam
+    {
+        public List<AddMemberInfoParam> AddMemberInfoParamList;
+        public Dictionary<string, List<string>> Dictionary;
+    }
     public class AddMemberInfoParam : Param
     {
         public string phone;
