@@ -9,7 +9,7 @@ namespace QuartzRedis
         static void Main(string[] args)
         {
             Global.Startup();
-            TaskJob.Worker();
+            //TaskJob.Worker();
             TaskJob.Subscribe();
             Console.ReadLine();
             //TaskJobBuss taskJobBuss = new TaskJobBuss();
