@@ -8,19 +8,19 @@ using System.Data;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using static QuartzRedis.Dao.SqlDao;
 
 namespace QuartzRedis.Buss
 {
     public class TaskJobBuss
     {
-        public void doWork()
+        public async Task DoWork()
         {
-            //System.Threading.Thread.Sleep(1000);
-            //Console.WriteLine(ids);
             updateUserInfo();
             updateCommit();
             getCommit();
+            Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")+"DONE");
         }
 
         /// <summary>
@@ -33,6 +33,7 @@ namespace QuartzRedis.Buss
                 SqlDao sqlDao = new SqlDao();
                 UpdateUserInfoParam updateUserInfoParam = sqlDao.getAddMemberInfoParam();
                 List<AddMemberInfoParam> paramList = updateUserInfoParam.AddMemberInfoParamList;
+                Console.WriteLine("updateUserInfo:"+ paramList.Count);
                 if (paramList.Count == 0)
                 {
                     return;
@@ -74,6 +75,7 @@ namespace QuartzRedis.Buss
                 List<String> list = new List<string>();
                 //处理玩偶兑换积分
                 List<GGiftSellMasterChangeParam> gList = sqlDao.getGGiftSellMasterChange();
+                Console.WriteLine("updateCommit_GGiftSellMaster:" + gList.Count);
                 foreach (GGiftSellMasterChangeParam gParam in gList)
                 {
                     int point = 0;
@@ -114,6 +116,7 @@ namespace QuartzRedis.Buss
                 }
                 //处理充值积分
                 List<GRechargeDetailChangeParam> rList = sqlDao.getGRechargeDetailChange();
+                Console.WriteLine("updateCommit_GRechargeDetail:" + rList.Count);
                 foreach (GRechargeDetailChangeParam rParam in rList)
                 {
                     int point = 0;
@@ -153,6 +156,7 @@ namespace QuartzRedis.Buss
                 }
                 //处理积分兑换币
                 List<GChangeScoreDetailChangeParam> cList = sqlDao.GChangeScoreDetailChange();
+                Console.WriteLine("updateCommit_GChangeScoreDetail:" + cList.Count);
                 foreach (GChangeScoreDetailChangeParam cParam in cList)
                 {
                     int point = 0;
@@ -210,6 +214,7 @@ namespace QuartzRedis.Buss
                 {
                     if (ri.data != null)
                     {
+                        Console.WriteLine("getCommit:" + ri.data.Count);
                         for (int i = 0; i < ri.data.Count; i++)
                         {
                             if (ri.data[i].storeId == "3")

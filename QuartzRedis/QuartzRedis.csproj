@@ -10,6 +10,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="2.2.4" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
+    <PackageReference Include="Quartz" Version="3.0.7" />
     <PackageReference Include="StackExchange.Redis" Version="2.0.593" />
   </ItemGroup>
 
